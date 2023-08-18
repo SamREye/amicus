@@ -10,6 +10,8 @@ openai_apikey = os.environ.get('OPENAI_API_KEY')
 # Instatiate a GithubWrapper object
 gh = GithubWrapper()
 
+REVIEW_LABEL = "amicus:reviewed"
+
 def main():
     # Open a file to get the list of owners
     owners = []
@@ -40,19 +42,31 @@ def main():
             continue
     
     # Get all pull requests for each repo
-    prs = []
+    pr_objs = {}
+    pr_hashes = []
     for repo in activated_repos:
         # Get all pull requests
         for pr in repo["repo"].get_pulls():
-            # Get the pull request's hash
-            pr_hash = pr.head.sha
-            prs.append({
-                "hash": pr_hash,
-                "uuid": uuid.uuid4(),
-            })
+            # Check to see if the PR has a REVIEWED label--if so, ignore it
+            if REVIEW_LABEL not in [label.name for label in pr.get_labels()]:
+                # Get the pull request's hash
+                pr_hash = pr.head.sha
+                pr_hashes.append({
+                    "repo": repo["repo"].full_name,
+                    "hash": pr_hash,
+                })
+                pr_objs[pr_hash] = pr
     
-    reports = analyze(prs)
-    print(reports)
+    reports = analyze(pr_hashes)
+
+    for report in reports["reports"]:
+        if report["hash"] not in pr_objs:
+            continue
+        pr = pr_objs[report["hash"]]
+        # Post a comment on the PR
+        pr.create_issue_comment(report["report"])
+        # Attach a label to the PR
+        pr.add_to_labels(REVIEW_LABEL)
 
 if __name__ == '__main__':
     main()

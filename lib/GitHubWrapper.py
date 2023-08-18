@@ -20,3 +20,7 @@ class GithubWrapper:
             sys.stderr.write("No such user or org: {}".format(name))
             return []
     
+    def get_pull_request_by_hash(self, repo, hash):
+        print(f"Fetching pull request {hash}...")
+        repo = self.get_repo(repo)
+        return repo.get_pull(hash)
