@@ -21,3 +21,7 @@ This project is put together in the course of the participation of Team Semantic
 ### First Discussion
 
 ![Design](/artifacts/whiteboard_session_1.png)
+
+### Restrictions
+
+ * Support only the Python language
