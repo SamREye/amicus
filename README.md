@@ -22,4 +22,4 @@ Amicus
 
 ### First Discussion
 
-![Design](/artifacts/whiteboard%20session%20#1.png)
+![Design](/artifacts/whiteboard_session_1.png)
