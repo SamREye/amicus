@@ -28,6 +28,16 @@ This project is put together in the course of the participation of Team Semantic
 
 ## Getting Started
 
-Set the environment variables:
+### Environemnt Variables
+
  * OPENAI_API_KEY
  * GITHUB_API_KEY
+
+### Owner File
+
+Populate the file `owners.txt` with a list of owners (i.e. usernames or organizations) for which you wish to evaluate its repos.
+
+### Run
+
+`python main.py`
+
