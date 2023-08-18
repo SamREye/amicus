@@ -6,11 +6,9 @@ A GitHub companion whose goal is to assist in maintaining code quality.
 
 This project is put together in the course of the participation of Team Semantic Labs in the [SuperAGI Autonomous Agents Hackathon of Aug 2023](https://superagi.com/autonomous-agents-hackathon/).
 
-## Project
+## Project Name
 
-Amicus
-:   latin legal term used to describe a "friend"
-:   an unbaised 3rd party who can contribute valuable information for considering in the making of an important decision.
+**Amicus**: (noun) latin legal term used to describe a "friend"; an unbaised 3rd party who can contribute valuable information for considering in the making of an important decision.
 
 ## Goals
 
