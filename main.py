@@ -3,6 +3,8 @@ import uuid
 
 from lib.GitHubWrapper import GithubWrapper
 
+from Analyzer import analyze
+
 openai_apikey = os.environ.get('OPENAI_API_KEY')
 
 # Instatiate a GithubWrapper object
@@ -49,7 +51,8 @@ def main():
                 "uuid": uuid.uuid4(),
             })
     
-    print(prs)
+    reports = analyze(prs)
+    print(reports)
 
 if __name__ == '__main__':
     main()
