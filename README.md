@@ -30,4 +30,4 @@ This project is put together in the course of the participation of Team Semantic
 
 Set the environment variables:
  * OPENAI_API_KEY
- * GITHUB_TOKEN
+ * GITHUB_API_KEY
