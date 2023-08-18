@@ -25,3 +25,9 @@ This project is put together in the course of the participation of Team Semantic
 ### Restrictions
 
  * Support only the Python language
+
+## Getting Started
+
+Set the environment variables:
+ * OPENAI_API_KEY
+ * GITHUB_TOKEN
