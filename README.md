@@ -22,7 +22,7 @@ This project is put together in the course of the participation of Team Semantic
 
 ![Design](/artifacts/whiteboard_session_1.png)
 
-### Restrictions
+### Restrictions/Limitations
 
  * Support only the Python language
 
@@ -33,6 +33,7 @@ This project is put together in the course of the participation of Team Semantic
  * OPENAI_API_KEY
  * GITHUB_API_KEY
  * WEAVIATE_API_KEY
+ * WEAVIATE_ENDPOINT
 
 ### Owner File
 
