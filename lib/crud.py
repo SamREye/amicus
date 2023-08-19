@@ -5,8 +5,6 @@ import os
 BASE_DIR = "tmp"
 import uuid
 
-BASE_DIR = "tmp"
-
 class CRUD:
 
     def __init__(self, file_name):
