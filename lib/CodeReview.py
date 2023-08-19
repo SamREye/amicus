@@ -60,7 +60,7 @@ class CodeReview:
             return None
 
     def execute(self):
-        queue_item = CRUD(self.database_name).get_queue_item()
+        queue_item = CRUD(self.database_name).get_oldest_review_not_done()
         print(queue_item)
 
         repo = self.get_repo_details(queue_item)
