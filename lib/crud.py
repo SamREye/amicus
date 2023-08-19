@@ -150,16 +150,38 @@ class CRUD:
 
         return "Session deleted."
 
-    def get_oldest_not_done(self):
+    def get_oldest_review_not_done(self):
         with open(self.file_path, 'r') as file:
             data = json.load(file)
             queue = data['queue']
-            
-            not_done_sessions = [session for session in queue if any(pull_request.get('review_status') == 'not_done' for pull_request in session.get("pull_requests", []))]
-            
-            if not not_done_sessions:
-                return None
-            
-            oldest_not_done = sorted(not_done_sessions, key=lambda x: x['date_added'])[0]
-            return oldest_not_done
 
+            not_done_reviews = [session for session in queue if any(pull_request['review_status'] == 'not_done' for pull_request in session["pull_requests"])]
+            
+            oldest_not_done_review = sorted(not_done_reviews, key=lambda x: x['date_added'])[0] if not_done_reviews else None
+            return oldest_not_done_review
+
+    def get_oldest_post_not_posted(self):
+        with open(self.file_path, 'r') as file:
+            data = json.load(file)
+            queue = data['queue']
+
+            not_posted_items = [session for session in queue if any(pull_request['post_status'] == 'not_posted' for pull_request in session["pull_requests"])]
+            
+            oldest_not_posted = sorted(not_posted_items, key=lambda x: x['date_added'])[0] if not_posted_items else None
+            return oldest_not_posted
+
+    def get_all_oldest_posts_not_posted(self):
+        with open(self.file_path, 'r') as file:
+            data = json.load(file)
+            queue = data['queue']
+            not_posted_sessions = [session for session in queue if any(pull_request['post_status'] == 'not_posted' for pull_request in session["pull_requests"])]
+            sorted_sessions = sorted(not_posted_sessions, key=lambda x: x['date_added'])
+            return sorted_sessions
+
+    def get_all_oldest_reviews_not_done(self):
+        with open(self.file_path, 'r') as file:
+            data = json.load(file)
+            queue = data['queue']
+            not_done_reviews = [session for session in queue if any(pull_request['review_status'] == 'not_done' for pull_request in session["pull_requests"])]
+            sorted_sessions = sorted(not_done_reviews, key=lambda x: x['date_added'])
+            return sorted_sessions

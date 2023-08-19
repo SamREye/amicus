@@ -20,8 +20,8 @@ print(response)
 # print(response)
 
 # 3. Update the post status for the same session and pull request
-response = db.update_post_status(session_id, pull_request_id, "posted")
-print(response)
+# response = db.update_post_status(session_id, pull_request_id, "posted")
+# print(response)
 
 # 4. Retrieve a specific session by session_id
 session_data = db.get_data_by_session_id(session_id)
@@ -31,8 +31,17 @@ print(session_data)
 # response = db.delete_by_session_id(session_id_example)
 # print(response)
 
-# 6. Get the oldest 'not_done' session
-oldest_not_done = db.get_oldest_not_done()
-print(oldest_not_done)
+oldest_review_not_done = db.get_oldest_review_not_done()
+
+# To get the oldest session with post_status 'not_posted'
+oldest_post_not_posted = db.get_oldest_post_not_posted()
+
+# To get all sessions sorted by oldest with post_status 'not_posted'
+all_posts_not_posted = db.get_all_oldest_posts_not_posted()
+
+# To get all sessions sorted by oldest with review_status 'not_done'
+all_reviews_not_done = db.get_all_oldest_reviews_not_done()
+
+
 
 
