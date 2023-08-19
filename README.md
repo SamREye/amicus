@@ -32,6 +32,7 @@ This project is put together in the course of the participation of Team Semantic
 
  * OPENAI_API_KEY
  * GITHUB_API_KEY
+ * WEAVIATE_API_KEY
 
 ### Owner File
 
