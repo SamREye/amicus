@@ -36,7 +36,7 @@ class WeaviateWrapper:
 
         # Simple test to see if the client is connected
         try:
-            print(self.client.get_meta())
+            self.client.get_meta()
         except weaviate.UnexpectedStatusCodeException as e:
             sys.stderr.write("Error connecting to Weaviate: {}".format(e))
             sys.exit(1)
