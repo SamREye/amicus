@@ -2,7 +2,6 @@ import os, sys, json
 
 import weaviate
 import openai
-from weaviate.embedded import EmbeddedOptions
 
 openai.api_key = os.environ.get('OPENAI_API_KEY')
 EMBEDDIING_MODEL = "text-embedding-ada-002"
@@ -42,12 +41,13 @@ class WeaviateWrapper:
             sys.stderr.write("Error connecting to Weaviate: {}".format(e))
             sys.exit(1)
     
+    def _make_default_field_value(self, value):
+        return {DEFAULT_FIELD: value}
+
     @_normalize_class_name
-    def insert_one(self, class_name, content):
-        data_object = {DEFAULT_FIELD: content}
-        oai_resp = openai.Embedding.create(input = [
-            json.dumps(data_object)
-        ], model=EMBEDDIING_MODEL)
+    def insert_chunk(self, class_name, chunk):
+        data_object = {DEFAULT_FIELD: chunk}
+        oai_resp = openai.Embedding.create(input = [chunk], model=EMBEDDIING_MODEL)
         uuid = self.client.data_object.create(
             data_object=data_object,
             class_name=class_name,
@@ -55,6 +55,38 @@ class WeaviateWrapper:
         )
         return uuid
     
+    @_normalize_class_name
+    def insert_md_document(self, class_name, document):
+        chunks = []
+        breadcrumbs = []
+        # Break down paragraph into sentences with breadcrumbs
+        for section in document.split("\n\n"):
+            section = section.strip()
+            if section.startswith("#"):
+                # Check the headings level by counting the number of hashes in the beggining of the line
+                heading_level = section.split(" ")[0].count("#")
+                heading = " ".join(section.split(" ")[1:])
+                while len(breadcrumbs) == 0 or len(breadcrumbs) != heading_level or breadcrumbs[-1] != heading:
+                    # If not in the breadcrumbs, add it
+                    if len(breadcrumbs) == heading_level - 1:
+                        breadcrumbs.append(heading)
+                    # If in the breadcrumbs, replace it
+                    elif len(breadcrumbs) == heading_level:
+                        breadcrumbs[-1] = heading
+                    # If at a higher level, pop it
+                    elif len(breadcrumbs) > heading_level:
+                        breadcrumbs.pop()
+                    # If at a lower level, append None
+                    elif len(breadcrumbs) < heading_level - 1:
+                        breadcrumbs.append(" * ")
+            else:
+                # If the section is not a heading, append it to the chunks, including the breadcrumbs
+                chunks.append("{}\n\n{}".format(" > ".join(breadcrumbs), section))
+
+        # Insert each chunk into Weaviate
+        for chunk in chunks:
+            self.insert_chunk(class_name, chunk)
+        
     def _generate_embedding(self, text):
         oai_resp = openai.Embedding.create(input = [text], model=EMBEDDIING_MODEL)
         return oai_resp['data'][0]['embedding']
@@ -75,9 +107,12 @@ class WeaviateWrapper:
 
 # Sample usage:
 # weaviate = WeaviateWrapper()
-# weaviate.insert_one("test_class", "The hills are flat... the water is dry... who the heck talks like this?")
-# weaviate.insert_one("test_class", "Sulfiric acid has many uses in metallurgy.")
-# weaviate.insert_one("test_class", "The carpenters are in need of more 2x4s")
-# print(weaviate.run_near_query("test_class", "chemistry", 1))
+# with open("test/samples/sample_md.md", "r") as f:
+#     sample_md = f.read()
+# weaviate.insert_md_document("test_class", sample_md)
+# weaviate.insert_line("test_class", "The hills are flat... the water is dry... who the heck talks like this?")
+# weaviate.insert_line("test_class", "Sulfiric acid has many uses in metallurgy.")
+# weaviate.insert_line("test_class", "The carpenters are in need of more 2x4s")
+# print(weaviate.run_near_query("test_class", "skip", 1))
 # weaviate.delete_class("Test_class")
 # print(weaviate.dump())
