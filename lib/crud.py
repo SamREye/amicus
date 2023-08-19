@@ -1,6 +1,8 @@
 import json
 import time
 import os
+import uuid
+
 class CRUD:
 
     def __init__(self, file_name):
@@ -9,66 +11,120 @@ class CRUD:
             os.makedirs(directory_path)
         self.file_path = f"{directory_path}/{file_name}"
 
+    def _load_data(self):
+        with open(self.file_path, 'a+') as file:
+            file.seek(0)
+            try:
+                data = json.load(file)
+            except json.JSONDecodeError:
+                data = {"queue": []}
+        return data
 
-    def add_pull_requests_to_queue(self, session_id, pull_requests, repo_name, repo_owner):
+    def add_pull_request(self, session_id, pull_request_id, repo_name, repo_owner, last_commit_hash):
         session_data = {
             "session_id": session_id,
-            "repo_name": repo_name,        # Added repo_name
-            "repo_owner": repo_owner,      # Added repo_owner
-            "pull_requests": pull_requests,
-            "date_added": int(time.time()),
-            "status": "not_done"
+            "repo_name": repo_name,
+            "repo_owner": repo_owner,
+            "pull_requests": [{
+                "review_status": "not_done",
+                "post_status": "not_posted",
+                "id": pull_request_id,
+                "last_commit_hash": last_commit_hash
+            }],
+            "date_added": int(time.time())
         }
 
-        if not os.path.exists(self.file_path):
-            with open(self.file_path, 'w') as file:
-                json.dump({"queue": []}, file)
+        with open(self.file_path, 'a+') as file:
+            file.seek(0)
+            try:
+                existing_data = json.load(file)
+            except json.JSONDecodeError:
+                existing_data = {"queue": []}
 
-        with open(self.file_path, 'r+') as file:
-            existing_data = json.load(file)
             existing_data["queue"].append(session_data)
             file.seek(0)
             file.truncate()
             json.dump(existing_data, file)
 
-        return "Pull requests added to queue."
+        return "Pull request added to queue."
 
+    def update_review_status(self, session_id, pull_request_id, review_status):
+        data = self._load_data()
 
-    def update_status(self, session_id, status):
-        with open(self.file_path, 'r+') as file:
-            data = json.load(file)
-            for session in data["queue"]:
-                if session["session_id"] == session_id:
-                    session['status'] = status
-                    file.seek(0)
-                    file.truncate()
-                    json.dump(data, file)
-                    return "Status updated."
+        for session in data["queue"]:
+            if session["session_id"] == session_id:
+                for pull_request in session["pull_requests"]:
+                    if pull_request["id"] == pull_request_id:
+                        pull_request["review_status"] = review_status
+                        with open(self.file_path, 'w') as file:
+                            json.dump(data, file)
+                        return "Review status updated."
 
-            return "Session ID not found."
+        return "Session ID or Pull Request ID not found."
+
+    def update_post_status(self, session_id, pull_request_id, post_status):
+        data = self._load_data()
+
+        for session in data["queue"]:
+            if session["session_id"] == session_id:
+                for pull_request in session["pull_requests"]:
+                    if pull_request["id"] == pull_request_id:
+                        pull_request["post_status"] = post_status
+                        with open(self.file_path, 'w') as file:
+                            json.dump(data, file)
+                        return "Post status updated."
+
+        return "Session ID or Pull Request ID not found."
 
     def get_data_by_session_id(self, session_id):
-        with open(self.file_path, 'r') as file:
-            data = json.load(file)
-            for session in data["queue"]:
-                if session["session_id"] == session_id:
-                    return session
+        data = self._load_data()
+        for session in data["queue"]:
+            if session["session_id"] == session_id:
+                return session
 
-            return "Session ID not found."
+        return "Session ID not found."
 
     def delete_by_session_id(self, session_id):
-        with open(self.file_path, 'r+') as file:
-            data = json.load(file)
-            data["queue"] = [session for session in data["queue"] if session["session_id"] != session_id]
-            file.seek(0)
-            file.truncate()
+        data = self._load_data()
+        data["queue"] = [session for session in data["queue"] if session["session_id"] != session_id]
+
+        with open(self.file_path, 'w') as file:
             json.dump(data, file)
-            return "Session deleted."
-    
-    def get_queue_item(self):
+
+        return "Session deleted."
+
+    def get_oldest_review_not_done(self):
         with open(self.file_path, 'r') as file:
             data = json.load(file)
             queue = data['queue']
-            not_done_items = [item for item in queue if item['status'] == 'not_done']
-            oldest_not_done = sorted(not_done_items, key=lambda x: x['date_added'])[0] if not_done_items else None
-            return oldest_not_done
+
+            not_done_reviews = [session for session in queue if any(pull_request['review_status'] == 'not_done' for pull_request in session["pull_requests"])]
+            
+            oldest_not_done_review = sorted(not_done_reviews, key=lambda x: x['date_added'])[0] if not_done_reviews else None
+            return oldest_not_done_review
+
+    def get_oldest_post_not_posted(self):
+        with open(self.file_path, 'r') as file:
+            data = json.load(file)
+            queue = data['queue']
+
+            not_posted_items = [session for session in queue if any(pull_request['post_status'] == 'not_posted' for pull_request in session["pull_requests"])]
+            
+            oldest_not_posted = sorted(not_posted_items, key=lambda x: x['date_added'])[0] if not_posted_items else None
+            return oldest_not_posted
+
+    def get_all_oldest_posts_not_posted(self):
+        with open(self.file_path, 'r') as file:
+            data = json.load(file)
+            queue = data['queue']
+            not_posted_sessions = [session for session in queue if any(pull_request['post_status'] == 'not_posted' for pull_request in session["pull_requests"])]
+            sorted_sessions = sorted(not_posted_sessions, key=lambda x: x['date_added'])
+            return sorted_sessions
+
+    def get_all_oldest_reviews_not_done(self):
+        with open(self.file_path, 'r') as file:
+            data = json.load(file)
+            queue = data['queue']
+            not_done_reviews = [session for session in queue if any(pull_request['review_status'] == 'not_done' for pull_request in session["pull_requests"])]
+            sorted_sessions = sorted(not_done_reviews, key=lambda x: x['date_added'])
+            return sorted_sessions
