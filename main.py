@@ -1,5 +1,5 @@
 import os, sys
-import uuid
+import uuid, json
 
 from lib.GitHubWrapper import GithubWrapper
 
@@ -57,7 +57,18 @@ def main():
                 })
                 pr_objs[pr_hash] = pr
     
-    reports = analyze(pr_hashes)
+    # Write the hashes to a file in JSON
+    hash_list_file = 'tmp/pr_list.json'
+    with open(hash_list_file, 'w') as f:
+        f.write(json.dumps(pr_hashes))
+    
+    # Run the analyzer
+    reports_file = analyze(hash_list_file)
+
+    # Extract the JSON reports file
+    reports = {}
+    with open(reports_file, 'r') as f:
+        reports = json.load(f)
 
     for report in reports["reports"]:
         if report["hash"] not in pr_objs:
