@@ -1,15 +1,139 @@
 import json
 import time
 import os
+
+
+BASE_DIR = "tmp"
 import uuid
 
 class CRUD:
 
     def __init__(self, file_name):
-        directory_path = "tmp"
-        if not os.path.exists(directory_path):
-            os.makedirs(directory_path)
-        self.file_path = f"{directory_path}/{file_name}"
+        if not os.path.exists(BASE_DIR):
+            os.makedirs(BASE_DIR)
+        self.file_path = f"{BASE_DIR}/{file_name}"
+
+    def is_pr_in_queue(self, pr):
+        with open(self.file_path, 'r') as file:
+            data = json.load(file)
+            queue = data['queue']
+            for repo in queue:
+                for pr_in_queue in repo['pull_requests']:
+                    if pr_in_queue['id'] == pr['id']:
+                        return True
+            return False
+
+    def get_all_needing_posting(self):
+        with open(self.file_path, 'r') as file:
+            data = json.load(file)
+            queue = data['queue']
+            needs_posting = []
+            for repo in queue:
+                for pr in repo['pull_requests']:
+                    if pr['review_status'] == 'done' and ('post_status' not in pr or pr['post_status'] != "not_done"):
+                        needs_posting.append((repo, pr))
+            return needs_posting
+    
+    def get_all_posted(self):
+        with open(self.file_path, 'r') as file:
+            data = json.load(file)
+            queue = data['queue']
+            posted = []
+            for repo in queue:
+                for pr in repo['pull_requests']:
+                    if 'post_status' in pr and pr['post_status'] == "done":
+                        posted.append((repo, pr))
+            return posted
+    
+    def mark_as_posted(self, session_id, pr_id):
+        with open(self.file_path, 'r+') as file:
+            data = json.load(file)
+            for session in data["queue"]:
+                if session["session_id"] == session_id:
+                    for pr in session['pull_requests']:
+                        if pr['id'] == pr_id:
+                            pr['post_status'] = 'done'
+                            file.seek(0)
+                            file.truncate()
+                            json.dump(data, file)
+                            return "Status updated."
+            return "Session ID not found."
+        
+    def get_report(self, session_id, pr_id, testing_file=None):
+        if testing_file is not None:
+            with open(testing_file, 'r') as file:
+                return file.read()
+        with open(BASE_DIR + "/" + session_id + "/reports.json", 'r') as file:
+            data = json.load(file)
+            for report in data["reports"]:
+                if report["id"] == pr_id:
+                    return report["report"]
+            return "PR ID not found."
+    def _load_data(self):
+        with open(self.file_path, 'a+') as file:
+            file.seek(0)
+            try:
+                data = json.load(file)
+            except json.JSONDecodeError:
+                data = {"queue": []}
+        return data
+
+    def is_pr_in_queue(self, pr):
+        with open(self.file_path, 'r') as file:
+            data = json.load(file)
+            queue = data['queue']
+            for repo in queue:
+                for pr_in_queue in repo['pull_requests']:
+                    if pr_in_queue['id'] == pr['id']:
+                        return True
+            return False
+
+    def get_all_needing_posting(self):
+        with open(self.file_path, 'r') as file:
+            data = json.load(file)
+            queue = data['queue']
+            needs_posting = []
+            for repo in queue:
+                for pr in repo['pull_requests']:
+                    if pr['review_status'] == 'done' and ('post_status' not in pr or pr['post_status'] != "not_done"):
+                        needs_posting.append((repo, pr))
+            return needs_posting
+    
+    def get_all_posted(self):
+        with open(self.file_path, 'r') as file:
+            data = json.load(file)
+            queue = data['queue']
+            posted = []
+            for repo in queue:
+                for pr in repo['pull_requests']:
+                    if 'post_status' in pr and pr['post_status'] == "done":
+                        posted.append((repo, pr))
+            return posted
+    
+    def mark_as_posted(self, session_id, pr_id):
+        with open(self.file_path, 'r+') as file:
+            data = json.load(file)
+            for session in data["queue"]:
+                if session["session_id"] == session_id:
+                    for pr in session['pull_requests']:
+                        if pr['id'] == pr_id:
+                            pr['post_status'] = 'done'
+                            file.seek(0)
+                            file.truncate()
+                            json.dump(data, file)
+                            return "Status updated."
+            return "Session ID not found."
+        
+    def get_report(self, session_id, pr_id, testing_file=None):
+        if testing_file is not None:
+            with open(testing_file, 'r') as file:
+                return file.read()
+        with open(BASE_DIR + "/" + session_id + "/reports.json", 'r') as file:
+            data = json.load(file)
+            for report in data["reports"]:
+                if report["id"] == pr_id:
+                    return report["report"]
+            return "PR ID not found."
 
     def _load_data(self):
         with open(self.file_path, 'a+') as file:
@@ -59,6 +183,20 @@ class CRUD:
                         with open(self.file_path, 'w') as file:
                             json.dump(data, file)
                         return "Review status updated."
+
+        return "Session ID or Pull Request ID not found."
+
+    def update_post_status(self, session_id, pull_request_id, post_status):
+        data = self._load_data()
+
+        for session in data["queue"]:
+            if session["session_id"] == session_id:
+                for pull_request in session["pull_requests"]:
+                    if pull_request["id"] == pull_request_id:
+                        pull_request["post_status"] = post_status
+                        with open(self.file_path, 'w') as file:
+                            json.dump(data, file)
+                        return "Post status updated."
 
         return "Session ID or Pull Request ID not found."
 
