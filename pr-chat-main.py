@@ -1,4 +1,6 @@
 import os, sys, time, json
+from dotenv import load_dotenv
+load_dotenv()
 
 from lib.GitHubWrapper import GithubWrapper
 from lib.WeaviateWrapper import WeaviateWrapper
