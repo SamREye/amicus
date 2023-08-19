@@ -2,6 +2,7 @@ import json
 import time
 import os
 
+
 BASE_DIR = "tmp"
 import uuid
 
@@ -134,6 +135,15 @@ class CRUD:
                     return report["report"]
             return "PR ID not found."
 
+    def _load_data(self):
+        with open(self.file_path, 'a+') as file:
+            file.seek(0)
+            try:
+                data = json.load(file)
+            except json.JSONDecodeError:
+                data = {"queue": []}
+        return data
+
     def add_pull_request(self, session_id, pull_request_id, repo_name, repo_owner, last_commit_hash):
         session_data = {
             "session_id": session_id,
@@ -173,6 +183,20 @@ class CRUD:
                         with open(self.file_path, 'w') as file:
                             json.dump(data, file)
                         return "Review status updated."
+
+        return "Session ID or Pull Request ID not found."
+
+    def update_post_status(self, session_id, pull_request_id, post_status):
+        data = self._load_data()
+
+        for session in data["queue"]:
+            if session["session_id"] == session_id:
+                for pull_request in session["pull_requests"]:
+                    if pull_request["id"] == pull_request_id:
+                        pull_request["post_status"] = post_status
+                        with open(self.file_path, 'w') as file:
+                            json.dump(data, file)
+                        return "Post status updated."
 
         return "Session ID or Pull Request ID not found."
 
