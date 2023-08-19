@@ -24,7 +24,7 @@ def main():
         # Post a comment on the PR
         utils.post_report(pr, report)
         # Index the report in Weaviate
-        # utils.index_report(pr, report)
+        utils.index_report(pr, report)
 
 if __name__ == '__main__':
     if len(sys.argv) == 2:

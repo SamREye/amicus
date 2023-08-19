@@ -64,3 +64,7 @@ def _get_class_name(pr):
 
 def index_report(pr, report):
     wv.insert_md_document(_get_class_name(pr), report)
+
+def get_query_vector_chunks(pr, question):
+    chunks = wv.run_near_query(_get_class_name(pr), question)
+    return chunks

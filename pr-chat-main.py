@@ -1,11 +1,14 @@
-import os, sys, time
+import os, sys, time, json
 
 from lib.GitHubWrapper import GithubWrapper
 from lib.WeaviateWrapper import WeaviateWrapper
+import lib.AmicusUtils as utils
 from lib.crud import CRUD
+from lib.GPTReportChat import GPTReportChat
 
 gh = GithubWrapper()
 wv = WeaviateWrapper()
+chat = GPTReportChat()
 
 crud = CRUD('queue.json')
 
@@ -22,10 +25,13 @@ def main():
 
         # Read last comment
         comments = pr.get_issue_comments()
-        last_comment = comments.reversed.get_page(0)[-1].body
-        if last_comment.lower().strip().startswith(CALLOUT.lower()):
-            # TODO: Reply to comment
-            print("Must reply")
+        last_comment = comments.reversed.get_page(0)[-1]
+        if last_comment.body.lower().strip().startswith(CALLOUT.lower()):
+            print("Comment received: {}".format(last_comment.body))
+            chunks = utils.get_query_vector_chunks(pr, last_comment.body)
+            reply = chat.reply_to_comment(last_comment.body, chunks, last_comment.user.login)
+            print("Replying: {}".format(reply))
+            pr.create_issue_comment(reply)
 
 if __name__ == '__main__':
     if len(sys.argv) == 2:
