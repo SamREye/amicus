@@ -3,7 +3,7 @@ import time
 import os
 
 
-BASE_DIR = "tmp"
+BASE_DIR = "data"
 import uuid
 
 class CRUD:
