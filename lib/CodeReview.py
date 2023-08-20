@@ -95,15 +95,15 @@ class CodeReview:
             # Append the new data to self.results
             self.results.append(pull_request_data)
 
-        json_data = self.transform_json(queue_item, self.results)
+        data = self.transform_json(queue_item, self.results)
 
-        extracted_data = [{"filename": item["filename"], "analysis_result": item["results"]["analysis_result"]} for item in json_data["reviews"][0]["results"][0]["data"]]
+        data = [{"filename": item["filename"], "analysis_result": item["results"]["analysis_result"]} for item in json_data["reviews"][0]["results"][0]["data"]]
 
-        long_summary = self.gpt_query.summarize_entire_pr(extracted_data)
-        short_summary = self.gpt_query.summary_shortener(long_summary)
+        data = self.gpt_query.summarize_entire_pr(extracted_data)
+        data = self.gpt_query.summary_shortener(long_summary)
 
-        json_data["reviews"][0]["results"][0]["long_summary"] = long_summary
-        json_data["reviews"][0]["results"][0]["executive_summary"] = short_summary
+        data["reviews"][0]["results"][0]["long_summary"] = long_summary
+        data["reviews"][0]["results"][0]["executive_summary"] = short_summary
 
         self.save_results_to_json(json_data)
         return json_data
