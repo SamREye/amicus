@@ -73,7 +73,7 @@ class CRUD:
             queue = data['queue']
             for repo in queue:
                 for pr_in_queue in repo['pull_requests']:
-                    if pr_in_queue['id'] == pr['id']:
+                    if pr_in_queue['id'] == pr["pr"].number:
                         return True
             return False
 
@@ -121,8 +121,15 @@ class CRUD:
             except json.JSONDecodeError:
                 data = {"queue": []}
         return data
+    
+    def add_pull_request(self, pr):
+        # generate uuid for session id
+        session_id = str(uuid.uuid4())
+        repo_name = pr['repo'].name
+        repo_owner = pr['repo'].owner.login
+        pull_request_id = pr['pr'].number
+        last_commit_hash = pr['pr'].head.sha
 
-    def add_pull_request(self, session_id, pull_request_id, repo_name, repo_owner, last_commit_hash):
         session_data = {
             "session_id": session_id,
             "repo_name": repo_name,
