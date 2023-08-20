@@ -5,6 +5,7 @@ from github import GithubException
 import json
 import time
 import os
+import requests
 
 class CodeReview:
     def __init__(self):
@@ -91,7 +92,7 @@ class CodeReview:
             repo = self.github_wrapper.get_repo(repo_name_and_owner)
             self.results = []
             for pull_request in queue_item['pull_requests']:
-                print("doing PR shiznit for id: " + str(pull_request['id']))
+                print("doing PR id: " + str(pull_request['id']))
                 pull_request_id = int(pull_request['id'])
                 pull_request = repo.get_pull(pull_request_id)
                 files_data = self.process_pull_request(pull_request, repo)
@@ -116,6 +117,13 @@ class CodeReview:
             json_data["reviews"][0]["results"][0]["executive_summary"] = short_summary
 
             self.update_results_file(json_data["reviews"][0])
+
+            url = "https://amicus.semantic-labs.com/pr/report/add"
+            headers = {'Content-Type': 'application/json'}
+            response = requests.post(url, json=json_data["reviews"][0], headers=headers)
+            print(response)
+
+
         return json_data
     #
     def add_review(self, existing_json, new_review):
