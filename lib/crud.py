@@ -248,6 +248,9 @@ class CRUD:
         with open(self.file_path, 'r') as file:
             data = json.load(file)
             queue = data['queue']
+
+            # Extract sessions where any pull_request has a review_status of 'not_done'
             not_done_reviews = [session for session in queue if any(pull_request['review_status'] == 'not_done' for pull_request in session["pull_requests"])]
+
             sorted_sessions = sorted(not_done_reviews, key=lambda x: x['date_added'])
             return sorted_sessions

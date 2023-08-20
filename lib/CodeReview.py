@@ -4,6 +4,7 @@ from lib.GPTQuery import GPTQuery
 from github import GithubException
 import json
 import time
+import os
 
 class CodeReview:
     def __init__(self):
@@ -13,8 +14,8 @@ class CodeReview:
         self.results = []
 
     def get_repo_details(self, queue_item):
-        repo_name = queue_item['repo_name']
-        repo_owner = queue_item['repo_owner']
+        repo_name = queue_item[0]['repo_name']
+        repo_owner = queue_item[0]['repo_owner']
         repo_name_and_owner = repo_owner + "/" + repo_name
         return self.github_wrapper.get_repo(repo_name_and_owner)
 
@@ -76,43 +77,83 @@ class CodeReview:
             return None
 
     def execute(self):
-        queue_item = CRUD(self.database_name).get_oldest_review_not_done()
-        print(queue_item)
+        queue_items = CRUD(self.database_name).get_all_oldest_reviews_not_done()
+        # print(queue_item)
 
-        repo = self.get_repo_details(queue_item)
 
-        for pull_request in queue_item['pull_requests']:
-            pull_request_id = 7 #int(pull_request['id'])
-            pull_request = repo.get_pull(pull_request_id)
-            files_data = self.process_pull_request(pull_request, repo)
 
-            # Create a new dictionary for this pull request's data
-            pull_request_data = {
-                "pull_request_id": pull_request_id,
-                "data": files_data
-            }
-            
-            # Append the new data to self.results
-            self.results.append(pull_request_data)
+        #loop through queue_item
+        for queue_item in queue_items:
+            # repo_info = self.get_repo_details(queue_item)
+            repo_name = queue_item['repo_name']
+            repo_owner = queue_item['repo_owner']
+            repo_name_and_owner = repo_owner + "/" + repo_name
+            repo = self.github_wrapper.get_repo(repo_name_and_owner)
+            self.results = []
+            for pull_request in queue_item['pull_requests']:
+                print("doing PR shiznit for id: " + str(pull_request['id']))
+                pull_request_id = int(pull_request['id'])
+                pull_request = repo.get_pull(pull_request_id)
+                files_data = self.process_pull_request(pull_request, repo)
 
-        json_data = self.transform_json(queue_item, self.results)
+                # Create a new dictionary for this pull request's data
+                pull_request_data = {
+                    "pull_request_id": pull_request_id,
+                    "data": files_data
+                }
+                
+                # Append the new data to self.results
+                self.results.append(pull_request_data)
 
-        extracted_data = [{"filename": item["filename"], "analysis_result": item["results"]["analysis_result"]} for item in json_data["reviews"][0]["results"][0]["data"]]
+            json_data = self.transform_json(queue_item, self.results)
 
-        long_summary = self.gpt_query.summarize_entire_pr(extracted_data)
-        short_summary = self.gpt_query.summary_shortener(long_summary)
+            extracted_data = [{"filename": item["filename"], "analysis_result": item["results"]["analysis_result"]} for item in json_data["reviews"][0]["results"][0]["data"]]
 
-        json_data["reviews"][0]["results"][0]["long_summary"] = long_summary
-        json_data["reviews"][0]["results"][0]["executive_summary"] = short_summary
+            long_summary = self.gpt_query.summarize_entire_pr(extracted_data)
+            short_summary = self.gpt_query.summary_shortener(long_summary)
 
-        self.save_results_to_json(json_data)
+            json_data["reviews"][0]["results"][0]["long_summary"] = long_summary
+            json_data["reviews"][0]["results"][0]["executive_summary"] = short_summary
+
+            self.update_results_file(json_data["reviews"][0])
         return json_data
-
+    #
+    def add_review(self, existing_json, new_review):
+        """
+        Add a new review to the reviews array in the existing JSON structure.
         
+        Parameters:
+        - existing_json (dict): The existing JSON structure.
+        - new_review (dict): The new review to be added.
 
-    def save_results_to_json(self, results):
-        with open("data/reviews.json", "w") as json_file:
-            json.dump(results, json_file, indent=4)
+        Returns:
+        - dict: The updated JSON structure.
+        """
+        existing_json['reviews'].append(new_review)
+        return existing_json
+
+    def update_results_file(self, new_review, file_path="data/reviews.json"):
+        """
+        Read the JSON structure from a file, append a new review, and save it back to the file.
+
+        Parameters:
+        - new_review (dict): The new review to be added.
+        - file_path (str, optional): Path to the JSON file. Defaults to "data/results.json".
+        """
+        with open(file_path, 'r') as file:
+            existing_json = json.load(file)
+
+        updated_json = self.add_review(existing_json, new_review)
+
+        with open(file_path, 'w') as file:
+            json.dump(updated_json, file, indent=4)
+
+
+
+
+    # def save_results_to_json(self, results):
+    #     with open("data/reviews.json", "w") as json_file:
+    #         json.dump(results, json_file, indent=4)
 
     def convert_diff_to_json(self, diff_text, original_code):
         file_changes = {
