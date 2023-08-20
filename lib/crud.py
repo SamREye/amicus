@@ -23,17 +23,6 @@ class CRUD:
                         return True
             return False
 
-    def get_all_needing_posting(self):
-        with open(self.file_path, 'r') as file:
-            data = json.load(file)
-            queue = data['queue']
-            needs_posting = []
-            for repo in queue:
-                for pr in repo['pull_requests']:
-                    if pr['review_status'] == 'done' and ('post_status' not in pr or pr['post_status'] != "not_done"):
-                        needs_posting.append((repo, pr))
-            return needs_posting
-    
     def get_all_posted(self):
         with open(self.file_path, 'r') as file:
             data = json.load(file)
@@ -95,7 +84,7 @@ class CRUD:
             needs_posting = []
             for repo in queue:
                 for pr in repo['pull_requests']:
-                    if pr['review_status'] == 'done' and ('post_status' not in pr or pr['post_status'] != "not_done"):
+                    if pr['review_status'] == 'done' and ('post_status' not in pr or pr['post_status'] == "not_done"):
                         needs_posting.append((repo, pr))
             return needs_posting
     

@@ -6,6 +6,7 @@ from lib.GitHubWrapper import GithubWrapper
 from lib.WeaviateWrapper import WeaviateWrapper
 import lib.AmicusUtils as utils
 from lib.crud import CRUD
+import requests
 
 gh = GithubWrapper()
 wv = WeaviateWrapper()
@@ -19,14 +20,25 @@ def main():
     for item in queue:
         repo_data = item[0]
         pr_data = item[1]
-        # Get the report
-        report = crud.get_report(repo_data['session_id'], pr_data['id'], testing_file="test/samples/good_report.md")
+        session_id = repo_data['session_id']
+        pr_id = pr_data['id']
+
+        # Get the report from amicus.semantic-labs.com/pr/report/markdown/<session_id>
+        url = "https://amicus.semantic-labs.com/pr/report/markdown/{}".format(session_id)
+        result = requests.get(url)
+        document = result.json()["document"]
+        # Get the comment from amicus.semantic-labs.com/pr/report/comment/<session_id>
+        url = "https://amicus.semantic-labs.com/pr/report/comment/{}".format(session_id)
+        result = requests.get(url)
+        comment = result.json()["comment"]
         # Get the PR
-        pr = gh.get_pull_request("{}/{}".format(repo_data['repo_owner'], repo_data['repo_name']), int(pr_data['id']))
+        pr = gh.get_pull_request("{}/{}".format(repo_data['repo_owner'], repo_data['repo_name']), int(pr_id))
         # Post a comment on the PR
-        utils.post_report(pr, report)
+        utils.post_report(pr, comment)
         # Index the report in Weaviate
-        utils.index_report(pr, report)
+        utils.index_report(pr, document)
+        # Update the queue
+        crud.update_post_status(session_id, pr_id, "done")
 
 if __name__ == '__main__':
     if len(sys.argv) == 2:
