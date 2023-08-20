@@ -6,7 +6,7 @@ import uuid
 class CRUD:
 
     def __init__(self, file_name):
-        directory_path = "tmp"
+        directory_path = "data"
         if not os.path.exists(directory_path):
             os.makedirs(directory_path)
         self.file_path = f"{directory_path}/{file_name}"
