@@ -11,9 +11,9 @@ import requests
 gh = GithubWrapper()
 wv = WeaviateWrapper()
 
-crud = CRUD('queue.json')
-
 def main():
+    # Load the queue
+    crud = CRUD('queue.json')
     queue = crud.get_all_needing_posting()
 
     # Treat the reports
@@ -45,6 +45,6 @@ if __name__ == '__main__':
         if sys.argv[1] == "--deamon":
             while True:
                 main()
-                time.sleep(10)
+                time.sleep(1)
     else:
         main()

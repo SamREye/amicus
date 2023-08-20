@@ -7,13 +7,12 @@ from lib.WeaviateWrapper import WeaviateWrapper
 import lib.AmicusUtils as utils
 from lib.crud import CRUD
 
-from Analyzer import analyze
-
 gh = GithubWrapper()
 wv = WeaviateWrapper()
-crud = CRUD('queue.json')
 
 def main():
+    # Load the queue
+    crud = CRUD('queue.json')
     # Get the list of owners
     owners = utils.get_owners()
     # Get the list of repos for each owner
@@ -27,13 +26,13 @@ def main():
     for pr in prs:
         if crud.is_pr_in_queue(pr):
             continue
-        crud.add_pull_requests_to_queue(pr)
+        crud.add_pull_request(pr)
 
 if __name__ == '__main__':
     if len(sys.argv) == 2:
         if sys.argv[1] == "--deamon":
             while True:
                 main()
-                time.sleep(10)
+                time.sleep(1)
     else:
         main()

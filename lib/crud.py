@@ -30,7 +30,7 @@ class CRUD:
             posted = []
             for repo in queue:
                 for pr in repo['pull_requests']:
-                    if 'post_status' in pr and pr['post_status'] == "done":
+                    if 'post_status' in pr and pr['post_status'] == "posted":
                         posted.append((repo, pr))
             return posted
     
@@ -41,7 +41,7 @@ class CRUD:
                 if session["session_id"] == session_id:
                     for pr in session['pull_requests']:
                         if pr['id'] == pr_id:
-                            pr['post_status'] = 'done'
+                            pr['post_status'] = 'posted'
                             file.seek(0)
                             file.truncate()
                             json.dump(data, file)
@@ -84,20 +84,9 @@ class CRUD:
             needs_posting = []
             for repo in queue:
                 for pr in repo['pull_requests']:
-                    if pr['review_status'] == 'done' and ('post_status' not in pr or pr['post_status'] == "not_done"):
+                    if pr['review_status'] == 'done' and ('post_status' not in pr or pr['post_status'] != "posted"):
                         needs_posting.append((repo, pr))
             return needs_posting
-    
-    def get_all_posted(self):
-        with open(self.file_path, 'r') as file:
-            data = json.load(file)
-            queue = data['queue']
-            posted = []
-            for repo in queue:
-                for pr in repo['pull_requests']:
-                    if 'post_status' in pr and pr['post_status'] == "done":
-                        posted.append((repo, pr))
-            return posted
     
     def mark_as_posted(self, session_id, pr_id):
         with open(self.file_path, 'r+') as file:
@@ -106,7 +95,7 @@ class CRUD:
                 if session["session_id"] == session_id:
                     for pr in session['pull_requests']:
                         if pr['id'] == pr_id:
-                            pr['post_status'] = 'done'
+                            pr['post_status'] = 'posted'
                             file.seek(0)
                             file.truncate()
                             json.dump(data, file)

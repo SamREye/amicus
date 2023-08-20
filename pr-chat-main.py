@@ -12,13 +12,14 @@ gh = GithubWrapper()
 wv = WeaviateWrapper()
 chat = GPTReportChat()
 
-crud = CRUD('queue.json')
-
 CALLOUT = '@semantic-labs'
 
 def main():
+    # Load the queue
+    crud = CRUD('queue.json')
     items = crud.get_all_posted()
     print(items)
+
     for item in items:
         # Split up tuple into repo and pr
         repo_data = item[0]
@@ -27,6 +28,8 @@ def main():
 
         # Read last comment
         comments = pr.get_issue_comments()
+        if comments.totalCount == 0:
+            continue
         last_comment = comments.reversed.get_page(0)[-1]
         if last_comment.body.lower().strip().startswith(CALLOUT.lower()):
             print("Comment received: {}".format(last_comment.body))
@@ -40,6 +43,6 @@ if __name__ == '__main__':
         if sys.argv[1] == "--deamon":
             while True:
                 main()
-                time.sleep(10)
+                time.sleep(1)
     else:
         main()
